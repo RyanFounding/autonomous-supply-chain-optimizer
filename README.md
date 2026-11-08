@@ -2,6 +2,8 @@
 
 Shows how a parts shortage affects production, and which supplier to source each short part from. Inventory and sourcing math runs in Python, and a team of LLM agents turns the results into an executive briefing.
 
+Live demo: [insan-supply-chain.streamlit.app](https://insan-supply-chain.streamlit.app)
+
 ## Problem
 
 When a component runs short, a plant needs three answers quickly: how many finished units can still be built, which parts are the bottleneck, and which supplier to order from, given that the cheapest quote is often not the fastest one. The data for this sits in the bill of materials, the inventory system and supplier quotes. Combining it by hand is slow and prone to errors.
