@@ -76,7 +76,7 @@ A part is short when its stock is at or below its reorder threshold. The order q
 Requires Python 3.11 or newer.
 
 ```bash
-git clone https://github.com/RyanFounding/autonomous-supply-chain-optimizer.git
+git clone https://github.com/insan-sll/autonomous-supply-chain-optimizer.git
 cd autonomous-supply-chain-optimizer
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
