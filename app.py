@@ -7,6 +7,7 @@ optional second step that needs a Gemini key.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -14,6 +15,8 @@ import streamlit as st
 from supply_chain.data import DataValidationError, SupplyChainData
 from supply_chain.engine import analyze
 from supply_chain.models import SupplyChainAnalysis
+
+DATA_DIR = Path(__file__).resolve().parent / "data"
 
 st.set_page_config(page_title="Supply Chain Disruption Analyzer", layout="wide")
 st.title("Supply Chain Disruption Analyzer")
@@ -28,7 +31,7 @@ def load_data() -> SupplyChainData:
         st.header("Data")
         use_sample = st.toggle("Use sample plant data", value=True)
         if use_sample:
-            return SupplyChainData.sample()
+            return SupplyChainData.sample(DATA_DIR)
         bom = st.file_uploader("Bill of materials (CSV)", type="csv")
         inventory = st.file_uploader("Inventory (CSV)", type="csv")
         suppliers = st.file_uploader("Supplier quotes (CSV)", type="csv")

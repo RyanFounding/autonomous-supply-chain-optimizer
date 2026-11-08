@@ -12,8 +12,6 @@ BOM_COLUMNS = ("final_product", "part_name", "quantity_required_per_unit")
 INVENTORY_COLUMNS = ("part_name", "current_stock", "reorder_threshold")
 SUPPLIER_COLUMNS = ("part_name", "supplier_name", "unit_cost_usd", "lead_time_days")
 
-DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
-
 CsvSource = str | Path | IO[bytes] | IO[str]
 
 
@@ -71,9 +69,14 @@ class SupplyChainData:
         )
 
     @classmethod
-    def sample(cls) -> SupplyChainData:
+    def sample(cls, data_dir: Path) -> SupplyChainData:
+        """Load the sample plant data from ``data_dir``.
+
+        The caller supplies the directory because the data ships with the repository, not
+        with the installed package, so it cannot be located reliably from this module.
+        """
         return cls.from_csv(
-            DEFAULT_DATA_DIR / "sample_bom.csv",
-            DEFAULT_DATA_DIR / "sample_inventory.csv",
-            DEFAULT_DATA_DIR / "sample_suppliers.csv",
+            data_dir / "sample_bom.csv",
+            data_dir / "sample_inventory.csv",
+            data_dir / "sample_suppliers.csv",
         )

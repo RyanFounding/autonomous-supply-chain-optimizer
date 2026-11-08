@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from supply_chain.data import SupplyChainData
@@ -7,10 +9,12 @@ from supply_chain.engine import analyze
 
 crew_module = pytest.importorskip("supply_chain.crew")
 
+SAMPLE_DIR = Path(__file__).resolve().parent.parent / "data"
+
 
 def test_crew_receives_precomputed_figures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    analysis = analyze(SupplyChainData.sample())
+    analysis = analyze(SupplyChainData.sample(SAMPLE_DIR))
 
     crew = crew_module.build_crew(analysis)
 

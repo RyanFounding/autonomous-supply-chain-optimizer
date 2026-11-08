@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
 from supply_chain.data import DataValidationError, SupplyChainData
 from supply_chain.engine import analyze, calculate_capacity, find_shortages
 from supply_chain.models import ShortageReason
+
+SAMPLE_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
 def make_data(
@@ -105,7 +109,7 @@ def test_parts_without_suppliers_are_listed_separately() -> None:
 
 
 def test_sample_data_produces_expected_analysis() -> None:
-    analysis = analyze(SupplyChainData.sample())
+    analysis = analyze(SupplyChainData.sample(SAMPLE_DIR))
 
     [pump] = analysis.audit.capacity
     assert pump.final_product == "Centrifugal Pump"
