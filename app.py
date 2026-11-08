@@ -7,16 +7,23 @@ optional second step that needs a Gemini key.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-from supply_chain.data import DataValidationError, SupplyChainData
-from supply_chain.engine import analyze
-from supply_chain.models import SupplyChainAnalysis
+ROOT = Path(__file__).resolve().parent
+DATA_DIR = ROOT / "data"
 
-DATA_DIR = Path(__file__).resolve().parent / "data"
+# Load the application code straight from this checkout. On Streamlit Cloud, a copy
+# installed into site-packages would not update when only the code changes, so the app
+# could run against a stale version of the package.
+sys.path.insert(0, str(ROOT / "src"))
+
+from supply_chain.data import DataValidationError, SupplyChainData  # noqa: E402
+from supply_chain.engine import analyze  # noqa: E402
+from supply_chain.models import SupplyChainAnalysis  # noqa: E402
 
 st.set_page_config(page_title="Supply Chain Disruption Analyzer", layout="wide")
 st.title("Supply Chain Disruption Analyzer")

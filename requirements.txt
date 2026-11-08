@@ -1,2 +1,7 @@
-# Used by Streamlit Community Cloud. Dependencies are declared in pyproject.toml.
-.
+# Used by Streamlit Community Cloud. Keep in sync with [project.dependencies] in
+# pyproject.toml (tests/test_requirements.py enforces this). The application code itself
+# is loaded from src/ by app.py, so it is not installed here.
+streamlit>=1.38
+pandas>=2.2
+pydantic>=2.7
+crewai[google-genai]>=1.0
