@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "supply-chain-disruption-analyzer"
+version = "1.1.0"
+description = "Deterministic BOM, inventory and sourcing analysis with an LLM agent briefing layer."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "pydantic>=2.7",
+    "streamlit>=1.38",
+    "crewai[google-genai]>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pandas-stubs>=2.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/supply_chain"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["supply_chain"]
+
+[[tool.mypy.overrides]]
+module = ["crewai", "crewai.*"]
+ignore_missing_imports = true

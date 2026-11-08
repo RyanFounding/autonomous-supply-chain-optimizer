@@ -1,43 +1,94 @@
-import streamlit as st
-import pandas as pd
+"""Streamlit front end.
+
+The deterministic analysis runs without an API key. The agent briefing is an
+optional second step that needs a Gemini key.
+"""
+
+from __future__ import annotations
+
 import os
-from src.crew import run_supply_chain_crew
 
-st.set_page_config(page_title="Supply Chain AI", layout="wide")
-st.title("🏭 Multi-Agent Supply Chain Optimizer")
+import pandas as pd
+import streamlit as st
 
-# Security check for API Key
-api_key = st.text_input("Enter your Gemini API Key:", type="password")
-if api_key:
+from supply_chain.data import DataValidationError, SupplyChainData
+from supply_chain.engine import analyze
+from supply_chain.models import SupplyChainAnalysis
+
+st.set_page_config(page_title="Supply Chain Disruption Analyzer", layout="wide")
+st.title("Supply Chain Disruption Analyzer")
+st.caption(
+    "Inventory and sourcing figures are computed in Python. "
+    "The optional agent briefing interprets them but never recalculates them."
+)
+
+
+def load_data() -> SupplyChainData:
+    with st.sidebar:
+        st.header("Data")
+        use_sample = st.toggle("Use sample plant data", value=True)
+        if use_sample:
+            return SupplyChainData.sample()
+        bom = st.file_uploader("Bill of materials (CSV)", type="csv")
+        inventory = st.file_uploader("Inventory (CSV)", type="csv")
+        suppliers = st.file_uploader("Supplier quotes (CSV)", type="csv")
+    if not (bom and inventory and suppliers):
+        st.info("Upload all three CSV files, or switch back to the sample data.")
+        st.stop()
+    return SupplyChainData.from_csv(bom, inventory, suppliers)
+
+
+def render_analysis(analysis: SupplyChainAnalysis) -> None:
+    st.subheader("Build capacity")
+    st.dataframe(pd.DataFrame([c.model_dump() for c in analysis.audit.capacity]), hide_index=True)
+
+    st.subheader("Shortages")
+    if analysis.audit.shortages:
+        st.dataframe(
+            pd.DataFrame([s.model_dump() for s in analysis.audit.shortages]), hide_index=True
+        )
+    else:
+        st.success("No parts are at or below their reorder point.")
+
+    if analysis.sourcing:
+        st.subheader("Sourcing options")
+        for option in analysis.sourcing:
+            st.markdown(f"**{option.part_name}**: order {option.order_quantity} units")
+            st.dataframe(
+                pd.DataFrame([o.model_dump() for o in option.all_options]), hide_index=True
+            )
+    if analysis.unsourceable_parts:
+        st.warning(f"No supplier on file for: {', '.join(analysis.unsourceable_parts)}")
+
+
+try:
+    data = load_data()
+except DataValidationError as exc:
+    st.error(f"Input data is invalid: {exc}")
+    st.stop()
+
+with st.expander("Input data"):
+    st.write("Inventory", data.inventory)
+    st.write("Bill of materials", data.bom)
+    st.write("Supplier quotes", data.suppliers)
+
+analysis = analyze(data)
+render_analysis(analysis)
+
+st.divider()
+st.subheader("Agent briefing")
+api_key = os.environ.get("GEMINI_API_KEY") or st.text_input(
+    "Gemini API key", type="password", help="Used for this session only; not stored."
+)
+if st.button("Generate executive briefing", disabled=not api_key):
     os.environ["GEMINI_API_KEY"] = api_key
+    from supply_chain.crew import run_briefing  # imported lazily; CrewAI is slow to load
 
-if st.button("Load Data & Run Simulation") and api_key:
-    with st.spinner("Loading Enterprise Datasets..."):
-        # Load local CSVs
-        df_bom = pd.read_csv("data/sample_bom.csv")
-        df_inv = pd.read_csv("data/sample_inventory.csv")
-        df_sup = pd.read_csv("data/sample_suppliers.csv")
-
-        # Show the data to the user
-        st.write("### Inventory Status", df_inv)
-
-        # Convert to JSON strings for the AI tools
-        bom_json = df_bom.to_json(orient="records")
-        inv_json = df_inv.to_json(orient="records")
-        sup_json = df_sup.to_json(orient="records")
-
-    with st.spinner("Agents are analyzing disruptions and executing tools... (This takes a moment to respect rate limits)"):
+    with st.spinner("Agents are reviewing the analysis..."):
         try:
-            # Kick off the backend CrewAI logic
-            result = run_supply_chain_crew(bom_json, inv_json, sup_json)
-            
-            st.success("✅ Protocol Complete")
-            st.markdown("### Executive Summary")
-            st.write(result.raw)
-            
-        except Exception as e:
-            error_msg = str(e)
-            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-                st.error("⚠️ Google API Free Tier Limit Reached. The server requires exactly 60 seconds to reset. Please wait one minute and click run again.")
+            st.markdown(run_briefing(analysis))
+        except Exception as exc:
+            if "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc):
+                st.error("Gemini rate limit reached. Wait about a minute and try again.")
             else:
-                st.error(f"⚠️ An unexpected system error occurred: {error_msg}")
+                st.error("The agent run failed. Check the API key and try again.")
